@@ -1,0 +1,1929 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Avalie e classifique casas de banho - WC Rank 1v1">
+  <title>WC Rank — 1v1</title>
+
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Adicione isso no <head> -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Tailwind CSS compiled -->
+  <link href="./dist/output.css" rel="stylesheet">
+
+
+  <style>
+    html, body { 
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    
+    }
+
+    
+    
+    /* Glassmorphism effect */
+    .glass {
+      backdrop-filter: saturate(180%) blur(16px);
+      background: rgba(255, 255, 255, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    /* Rating stars */
+    .star {
+      cursor: pointer;
+      font-size: 28px;
+      line-height: 1;
+      transition: all 0.2s ease;
+    }
+    
+    .star[aria-checked="true"] {
+      filter: drop-shadow(0 0 0.2rem rgba(0, 0, 0, 0.25));
+      transform: scale(1.1);
+    }
+    
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      backdrop-filter: blur(4px);
+    }
+    
+    .modal-content {
+      position: relative;
+      background: white;
+      margin: 10% auto;
+      padding: 28px;
+      border-radius: 16px;
+      max-width: 440px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      animation: modalFadeIn 0.3s ease-out;
+    }
+    
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Image upload styles */
+    .preview-image {
+      max-height: 180px;
+      object-fit: cover;
+      border-radius: 12px;
+      margin-top: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+    
+    .progress-bar {
+      height: 6px;
+      background: #e2e8f0;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 12px;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #6366f1, #8b5cf6);
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+    
+    .upload-btn {
+      background: linear-gradient(90deg, #6366f1, #8b5cf6);
+      color: white;
+      border-radius: 10px;
+      padding: 10px 18px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+    }
+    
+    .upload-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+    
+    .upload-btn input {
+      display: none;
+    }
+    
+    /* Feed cards */
+    .feed-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 24px;
+      margin-top: 20px;
+    }
+    
+    .feed-card {
+      background: white;
+      border-radius: 18px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+      border: 1px solid rgba(226, 232, 240, 0.6);
+    }
+    
+    .feed-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 12px 24px rgba(79, 70, 229, 0.15);
+    }
+    
+    .card-image {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #94a3b8;
+    }
+    
+    .card-content {
+      padding: 24px;
+    }
+    
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    
+    .bathroom-name {
+      font-weight: 600;
+      font-size: 1.15rem;
+      color: #1e293b;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .rating-badge {
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      color: #b45309;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    
+    .card-body {
+      margin-bottom: 18px;
+    }
+    
+    .note {
+      color: #475569;
+      line-height: 1.6;
+      font-size: 0.95rem;
+      padding: 12px 0;
+      border-top: 1px dashed #e2e8f0;
+      border-bottom: 1px dashed #e2e8f0;
+      margin: 12px 0;
+    }
+    
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 16px;
+      color: #64748b;
+      font-size: 0.9rem;
+    }
+    
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #4f46e5;
+      font-weight: 600;
+      font-size: 0.85rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .empty-feed {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px 0;
+      color: #64748b;
+    }
+    
+    .empty-feed i {
+      font-size: 3.5rem;
+      margin-bottom: 20px;
+      color: #e2e8f0;
+    }
+    
+    .map-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #4f46e5;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.2s;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: rgba(79, 70, 229, 0.1);
+    }
+    
+    .map-link:hover {
+      color: #4338ca;
+      background: rgba(79, 70, 229, 0.2);
+      text-decoration: none;
+    }
+    
+    .remove-btn {
+      color: #dc2626;
+      background: rgba(220, 38, 38, 0.1);
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: none;
+    }
+    
+    .remove-btn:hover {
+      background: rgba(220, 38, 38, 0.2);
+      transform: translateY(-1px);
+    }
+    
+    .star-rating {
+      color: #f59e0b;
+      font-size: 1.15rem;
+      letter-spacing: 2px;
+    }
+    
+    /* Form container */
+    .form-container {
+      position: sticky;
+      top: 100px;
+    }
+    
+    /* Duel stats */
+    .duel-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    
+    .stat-card {
+      border-radius: 14px;
+      border: 1px solid rgba(226, 232, 240, 0.6);
+      padding: 20px;
+      background: white;
+      transition: all 0.3s ease;
+    }
+    
+    .stat-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.05);
+    }
+    
+    /* Dark mode styles */
+    .dark body {
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: #e2e8f0;
+    }
+    
+    .dark .glass {
+      background: rgba(15, 23, 42, 0.8) !important;
+      border-color: rgba(51, 65, 85, 0.5) !important;
+    }
+    
+    .dark header {
+      background: rgba(15, 23, 42, 0.9) !important;
+      border-color: rgba(51, 65, 85, 0.5) !important;
+    }
+    
+    .dark .text-slate-800 {
+      color: #f1f5f9 !important;
+    }
+    
+    .dark .border-slate-200 {
+      border-color: #334155 !important;
+    }
+    
+    .dark input,
+    .dark textarea,
+    .dark select {
+      background: #1e293b !important;
+      border-color: #334155 !important;
+      color: #e2e8f0 !important;
+    }
+    
+    .dark .feed-card {
+      background: #1e293b !important;
+      border-color: #334155 !important;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2) !important;
+    }
+    
+    .dark .rating-badge {
+      background: linear-gradient(135deg, #451a03, #78350f) !important;
+      color: #f59e0b !important;
+    }
+    
+    .dark .card-image {
+      background: linear-gradient(135deg, #1e293b, #0f172a) !important;
+    }
+    
+    .dark .note {
+      border-color: #334155 !important;
+      color: #cbd5e1 !important;
+    }
+    
+    .dark .card-footer {
+      color: #94a3b8 !important;
+    }
+    
+    .dark .remove-btn {
+      background: rgba(220, 38, 38, 0.2) !important;
+      color: #fca5a5 !important;
+    }
+    
+    .dark .map-link {
+      color: #93c5fd !important;
+      background: rgba(147, 197, 253, 0.1) !important;
+    }
+    
+    .dark .map-link:hover {
+      background: rgba(147, 197, 253, 0.2) !important;
+    }
+    
+    .dark .empty-feed {
+      color: #94a3b8 !important;
+    }
+    
+    .dark .modal-content {
+      background: #1e293b !important;
+      color: #e2e8f0 !important;
+      border-color: #334155 !important;
+    }
+    
+    .dark .close {
+      color: #e2e8f0 !important;
+    }
+    
+    .dark .stat-card {
+      background: #1e293b !important;
+      border-color: #334155 !important;
+    }
+    
+    /* Dark mode toggle */
+    .dark-mode-toggle {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 1.3rem;
+      color: #4f46e5;
+      transition: all 0.3s;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+    }
+    
+    .dark .dark-mode-toggle {
+      color: #f59e0b;
+    }
+    
+    .dark-mode-toggle:hover {
+      background: rgba(79, 70, 229, 0.1);
+      transform: rotate(20deg);
+    }
+    
+    .dark .dark-mode-toggle:hover {
+      background: rgba(245, 158, 11, 0.1);
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 1024px) {
+      .form-container {
+        position: static;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .feed-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .duel-stats {
+        grid-template-columns: 1fr;
+      }
+      
+    }
+    
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .animate-fade-in {
+      animation: fadeIn 0.5s ease-out forwards;
+    }
+    
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: #c7d2fe;
+      border-radius: 4px;
+    }
+    
+    .dark ::-webkit-scrollbar-track {
+      background: #1e293b;
+    }
+    
+    .dark ::-webkit-scrollbar-thumb {
+      background: #4f46e5;
+    }
+    
+    /* Tooltip */
+    .tooltip {
+      position: relative;
+    }
+    
+    .tooltip .tooltip-text {
+      visibility: hidden;
+      width: 120px;
+      background-color: #1e293b;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 5px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-size: 0.8rem;
+    }
+    
+    .tooltip:hover .tooltip-text {
+      visibility: visible;
+      opacity: 1;
+    }
+    
+    .dark .tooltip .tooltip-text {
+      background-color: #f8fafc;
+      color: #1e293b;
+    }
+    
+    /* Page content */
+    .page {
+      display: none;
+    }
+    
+    .page.active {
+      display: block;
+    }
+    
+    /* Navbar */
+    .navbar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      z-index: 100;
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+    }
+    
+    .dark .navbar {
+      background: #1e293b;
+      border-top: 1px solid #334155;
+    }
+    
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-decoration: none;
+      color: #64748b;
+      font-size: 0.8rem;
+      padding: 5px 10px;
+      border-radius: 10px;
+      transition: all 0.2s;
+    }
+    
+    .nav-item.active, .nav-item:hover {
+      color: #4f46e5;
+      background: rgba(79, 70, 229, 0.1);
+    }
+    
+    .dark .nav-item.active, .dark .nav-item:hover {
+      color: #93c5fd;
+      background: rgba(147, 197, 253, 0.1);
+    }
+    
+    .nav-icon {
+      font-size: 1.2rem;
+      margin-bottom: 4px;
+    }
+    
+    /* Stats page */
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    
+    .stat-chart {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    
+    .dark .stat-chart {
+      background: #1e293b;
+    }
+    
+    .chart-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 15px;
+      color: #1e293b;
+    }
+    
+    .dark .chart-title {
+      color: #f1f5f9;
+    }
+    
+    .chart-placeholder {
+      height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f8fafc;
+      border-radius: 12px;
+      color: #94a3b8;
+    }
+    
+    .dark .chart-placeholder {
+      background: #0f172a;
+      color: #64748b;
+    }
+    
+    /* Profile page */
+    .profile-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 30px 0;
+    }
+    
+    .profile-avatar {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 2.5rem;
+      margin-bottom: 15px;
+    }
+    
+    .profile-name {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 5px;
+      color: #1e293b;
+    }
+    
+    .dark .profile-name {
+      color: #f1f5f9;
+    }
+    
+    .profile-email {
+      color: #64748b;
+      font-size: 0.95rem;
+    }
+    
+    .profile-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 20px 0;
+    }
+    
+    .profile-stat {
+      background: white;
+      border-radius: 12px;
+      padding: 15px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+    
+    .dark .profile-stat {
+      background: #1e293b;
+    }
+    
+    .stat-value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #4f46e5;
+      margin-bottom: 5px;
+    }
+    
+    .dark .stat-value {
+      color: #93c5fd;
+    }
+    
+    .stat-label {
+      font-size: 0.85rem;
+      color: #64748b;
+    }
+    /* Adicione isso ao seu CSS */
+.stat-chart {
+  min-height: 300px;
+}
+
+canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.chart-placeholder {
+  height: 250px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+  border-radius: 12px;
+  color: #94a3b8;
+}
+
+.dark .chart-placeholder {
+  background: #0f172a;
+  color: #64748b;
+}
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-fuchsia-50">
+  <!-- Header Section -->
+  <header class="sticky top-0 z-50 border-b border-indigo-100/60 bg-white/80 backdrop-blur-lg">
+    <div class="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <div class="h-10 w-10 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white grid place-items-center shadow-md">
+          <i class="fas fa-toilet-paper"></i>
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold text-slate-800">WC Rank — 1v1</h1>
+          <p class="hidden sm:block text-sm text-slate-600">Avalie e classifique casas de banho</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <button id="darkModeToggle" class="dark-mode-toggle tooltip">
+          <i class="fas fa-moon"></i>
+          <span class="tooltip-text">Alternar tema</span>
+        </button>
+        <img id="userPhoto" alt="" class="hidden h-10 w-10 rounded-full ring-2 ring-indigo-200 shadow-sm" />
+        <button id="authBtn" class="rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 px-5 py-2.5 text-white font-medium shadow-md hover:shadow-lg hover:from-indigo-500 hover:to-violet-500 active:scale-[0.98] transition-all">
+          Entrar
+        </button>
+        <div id="adminLink" class="hidden">
+          <a href="dashboard.html" class="bg-gradient-to-br from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white px-5 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-2">
+            <i class="fas fa-lock"></i>
+            Dashboard
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Login Modal -->
+  <div id="loginModal" class="modal">
+    <div class="modal-content">
+      <span class="close absolute top-5 right-5 text-2xl cursor-pointer hover:text-indigo-600 transition-colors">&times;</span>
+      <h2 class="text-2xl font-bold mb-6 text-center">Entrar na sua conta</h2>
+      
+      <div class="space-y-5">
+        <!-- Google Login -->
+        <button id="googleLoginBtn" class="w-full flex items-center justify-center gap-3 bg-gradient-to-br from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white py-3 rounded-xl shadow-md hover:shadow-lg transition-all">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="white">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm6.36 14.83c-1.43-1.74-4.9-1.33-6.36-4.33-4.33 1.79-3.46 6.14.57 7.76A7.99 7.99 0 0 0 20 12c0-.62-.08-1.21-.21-1.79-1.47.4-3.08.42-4.38-.62-1.63-1.31-1.52-3.69-.34-5.19 1.83-2.24 6.03-1.2 6.83 1.53.25.83.1 1.73-.55 2.35-.65.62-1.7.77-2.49.3-1.38-.81-3.2.18-3.09 1.82.11 1.64 2.11 2.32 3.28 1.21.39-.37.7-.84.9-1.36H12v-2.5h7.5c.03.78-.1 1.57-.14 2.33z"/>
+          </svg>
+          Continuar com Google
+        </button>
+        
+        <div class="relative flex items-center my-4">
+          <div class="flex-1 border-t border-slate-300"></div>
+          <span class="px-3 text-slate-500 bg-white dark:bg-slate-800">ou</span>
+          <div class="flex-1 border-t border-slate-300"></div>
+        </div>
+        
+        <!-- Email Login -->
+        <form id="emailLoginForm" class="space-y-4">
+            <div>
+              <label for="loginEmail" class="block text-sm font-medium text-slate-700 mb-2">Endereço de email</label>
+              <input type="email" id="loginEmail" name="email" autocomplete="email" required class="w-full rounded-xl border border-slate-300 px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
+            </div>
+            <div>
+              <label for="loginPassword" class="block text-sm font-medium text-slate-700 mb-2">Senha</label>
+              <input type="password" id="loginPassword" name="password" autocomplete="current-password" required class="w-full rounded-xl border border-slate-300 px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
+            </div>
+            <button type="submit" class="w-full bg-gradient-to-br from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white py-3 rounded-xl shadow-md hover:shadow-lg transition-all">
+              Entrar com Email
+            </button>
+            <p id="loginMessage" class="text-sm text-red-600 mt-2 text-center"></p>
+          </form>
+          
+          <div class="text-center text-sm pt-2">
+            <p>Não tem uma conta? <button id="showRegisterBtn" class="text-indigo-600 hover:text-indigo-800 font-medium transition-colors">Registre-se</button></p>
+          </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Register Modal -->
+  <div id="registerModal" class="modal">
+    <div class="modal-content">
+      <span class="close absolute top-5 right-5 text-2xl cursor-pointer hover:text-indigo-600 transition-colors">&times;</span>
+      <h2 class="text-2xl font-bold mb-6 text-center">Criar nova conta</h2>
+      
+      <form id="registerForm" class="space-y-4">
+        <div>
+          <label for="registerEmail" class="block text-sm font-medium text-slate-700 mb-2">Endereço de email</label>
+          <input type="email" id="registerEmail" autocomplete="email" required>
+        </div>
+        <div>
+          <label for="registerPassword" class="block text-sm font-medium text-slate-700 mb-2">Senha</label>
+          <input type="password" id="registerPassword" autocomplete="new-password" required>
+        </div>
+        <div>
+          <label for="registerPasswordConfirm" class="block text-sm font-medium text-slate-700 mb-2">Confirmar senha</label>
+          <input type="password" id="registerPasswordConfirm" autocomplete="new-password" required>        </div>
+        <button type="submit" class="w-full bg-gradient-to-br from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white py-3 rounded-xl shadow-md hover:shadow-lg transition-all">
+          Criar Conta
+        </button>
+        <p id="registerMessage" class="text-sm mt-2 text-center"></p>
+      </form>
+      
+      <div class="text-center text-sm pt-2">
+        <p>Já tem uma conta? <button id="showLoginBtn" class="text-indigo-600 hover:text-indigo-800 font-medium transition-colors">Faça login</button></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pages -->
+  <div class="mx-auto max-w-7xl px-6 py-8">
+    <!-- Configuration Alert -->
+    <div id="configAlert" class="hidden rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-900 animate-fade-in">
+      <div class="flex items-start gap-3">
+        <i class="fas fa-exclamation-triangle text-xl mt-0.5"></i>
+        <div>
+          <h3 class="font-semibold mb-1">Configuração necessária</h3>
+          <p class="text-sm">Por favor, edite o ficheiro e preencha <code class="bg-amber-100 px-1.5 py-0.5 rounded">firebaseConfig</code> com as suas credenciais do Firebase.</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Home Page -->
+    <div id="homePage" class="page active">
+      <div class="space-y-8">
+        <!-- Duel Section -->
+        <section class="glass rounded-3xl shadow-lg p-6 border border-indigo-100/50 animate-fade-in">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white grid place-items-center">
+              <i class="fas fa-trophy"></i>
+            </div>
+            <h2 class="text-xl font-bold text-slate-800">Duelo de Banheiros</h2>
+          </div>
+          
+          <div id="duel" class="duel-stats">
+            <div class="stat-card">
+              <div class="text-slate-500 text-sm mb-1">Total de avaliações</div>
+              <div class="text-3xl font-bold text-indigo-600" id="aCount">—</div>
+              <div class="text-slate-500 text-sm mt-3">Média de avaliação</div>
+              <div class="flex items-center gap-2">
+                <span class="text-xl font-semibold" id="aAvg">—</span>
+                <span class="text-amber-500">
+                  <i class="fas fa-star"></i>
+                </span>
+              </div>
+            </div>
+            
+            <div class="stat-card">
+              <div class="text-slate-500 text-sm mb-1">Total de avaliações</div>
+              <div class="text-3xl font-bold text-indigo-600" id="bCount">—</div>
+              <div class="text-slate-500 text-sm mt-3">Média de avaliação</div>
+              <div class="flex items-center gap-2">
+                <span class="text-xl font-semibold" id="bAvg">—</span>
+                <span class="text-amber-500">
+                  <i class="fas fa-star"></i>
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+        
+        <!-- Feed Section -->
+        <section class="glass rounded-3xl shadow-lg p-6 border border-indigo-100/50 animate-fade-in">
+          <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center gap-3">
+              <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white grid place-items-center">
+                <i class="fas fa-rss"></i>
+              </div>
+              <h2 class="text-xl font-bold text-slate-800">Feed recente</h2>
+            </div>
+            <div class="text-indigo-600 text-sm flex items-center gap-2 bg-indigo-50 px-3 py-1.5 rounded-lg">
+              <i class="fas fa-sync-alt fa-spin"></i>
+              Atualização em tempo real
+            </div>
+          </div>
+          
+          <div id="feed" class="feed-grid"></div>
+        </section>
+      </div>
+    </div>
+    
+    <!-- Add Review Page -->
+    <div id="addPage" class="page">
+      <div class="glass rounded-3xl shadow-lg p-6 border border-indigo-100/50 form-container animate-fade-in">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white grid place-items-center">
+            <i class="fas fa-plus"></i>
+          </div>
+          <h2 class="text-xl font-bold text-slate-800">Novo registo</h2>
+        </div>
+        
+        <form id="poopForm" class="space-y-5">
+          <!-- Bathroom Name -->
+          <div>
+            <label for="bathroomName" class="block text-sm font-medium text-slate-700 mb-2">Casa de banho</label>
+            <div class="relative">
+              <input id="bathroomName" type="text" maxlength="100" placeholder="ex: Escritório 3º piso" 
+                     class="w-full rounded-xl border border-slate-300 px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all pl-10" required />
+              <i class="fas fa-toilet absolute left-3 top-3.5 text-slate-400"></i>
+            </div>
+          </div>
+          
+          <!-- Rating -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">Avaliação</label>
+            <div id="stars" class="flex gap-1.5" role="radiogroup">
+              <button type="button" class="star" data-value="1" aria-checked="false" aria-label="1 estrela">⭐</button>
+              <button type="button" class="star" data-value="2" aria-checked="false" aria-label="2 estrelas">⭐</button>
+              <button type="button" class="star" data-value="3" aria-checked="false" aria-label="3 estrelas">⭐</button>
+              <button type="button" class="star" data-value="4" aria-checked="false" aria-label="4 estrelas">⭐</button>
+              <button type="button" class="star" data-value="5" aria-checked="false" aria-label="5 estrelas">⭐</button>
+            </div>
+            <input id="rating" type="hidden" value="0" />
+          </div>
+          
+          <!-- Notes -->
+          <div>
+            <label for="note" class="block text-sm font-medium text-slate-700 mb-2">Notas (opcional)</label>
+            <div class="relative">
+              <textarea id="note" rows="3" maxlength="300" placeholder="ex: Papel ok, cheiro ótimo" 
+                        class="w-full rounded-xl border border-slate-300 px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all pl-10"></textarea>
+              <i class="fas fa-comment-dots absolute left-3 top-3.5 text-slate-400"></i>
+            </div>
+          </div>
+          
+          <!-- Image Upload -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">Imagem (opcional)</label>
+            <div class="upload-btn">
+              <i class="fas fa-camera"></i>
+              <span id="uploadText">Selecionar imagem</span>
+              <input id="bathroomImageFile" type="file" accept="image/*" />
+            </div>
+            <div id="previewContainer" class="hidden mt-3">
+              <img id="imagePreview" class="preview-image w-full" />
+              <div class="progress-bar">
+                <div id="progressFill" class="progress-fill"></div>
+              </div>
+            </div>
+            <p id="uploadStatus" class="text-xs text-slate-500 mt-2"></p>
+          </div>
+          <input type="hidden" id="bathroomImage" />
+          
+          <!-- Location Link -->
+          <div>
+            <label for="bathroomLink" class="block text-sm font-medium text-slate-700 mb-2">Link localização (opcional)</label>
+            <div class="relative">
+              <input id="bathroomLink" type="url" placeholder="https://maps.google.com/..." 
+                     class="w-full rounded-xl border border-slate-300 px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all pl-10" />
+              <i class="fas fa-map-marker-alt absolute left-3 top-3.5 text-slate-400"></i>
+            </div>
+          </div>
+          
+          <!-- Submit Button -->
+          <button class="w-full bg-gradient-to-br from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white py-3.5 rounded-xl font-medium shadow-md hover:shadow-lg disabled:opacity-50 transition-all flex items-center justify-center gap-2" 
+                  id="submitBtn" disabled>
+            <i class="fas fa-save"></i>
+            Guardar avaliação
+          </button>
+          <p id="formMsg" class="text-sm text-center text-slate-600 mt-2"></p>
+        </form>
+      </div>
+    </div>
+    
+    <!-- Statistics Page -->
+    <div id="statsPage" class="page">
+      <div class="glass rounded-3xl shadow-lg p-6 border border-indigo-100/50 animate-fade-in">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white grid place-items-center">
+            <i class="fas fa-chart-pie"></i>
+          </div>
+          <h2 class="text-xl font-bold text-slate-800">Estatísticas</h2>
+        </div>
+        
+        <div class="stats-container">
+          <div class="stat-chart">
+            <div class="chart-title">Média de Avaliações</div>
+            <div class="chart-placeholder">
+              <i class="fas fa-chart-line text-4xl"></i>
+            </div>
+          </div>
+          
+          <div class="stat-chart">
+            <div class="chart-title">Distribuição de Estrelas</div>
+            <div class="chart-placeholder">
+              <i class="fas fa-star text-4xl"></i>
+            </div>
+          </div>
+          
+          <div class="stat-chart">
+            <div class="chart-title">Casas de Banho Mais Populares</div>
+            <div class="chart-placeholder">
+              <i class="fas fa-toilet text-4xl"></i>
+            </div>
+          </div>
+          
+          <div class="stat-chart">
+            <div class="chart-title">Avaliações por Dia</div>
+            <div class="chart-placeholder">
+              <i class="fas fa-calendar-alt text-4xl"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Profile Page -->
+    <div id="profilePage" class="page">
+      <div class="glass rounded-3xl shadow-lg p-6 border border-indigo-100/50 animate-fade-in">
+        <div class="profile-header">
+          <div class="profile-avatar">
+            <i class="fas fa-user"></i>
+          </div>
+          <h2 class="profile-name" id="profileName">Convidado</h2>
+          <p class="profile-email" id="profileEmail">Faça login para ver seu perfil</p>
+        </div>
+        
+        <div class="profile-stats">
+          <div class="profile-stat">
+            <div class="stat-value" id="totalReviews">0</div>
+            <div class="stat-label">Avaliações</div>
+          </div>
+          
+          <div class="profile-stat">
+            <div class="stat-value" id="avgRating">0.0</div>
+            <div class="stat-label">Média</div>
+          </div>
+          
+          <div class="profile-stat">
+            <div class="stat-value" id="topRating">5</div>
+            <div class="stat-label">Melhor Avaliação</div>
+          </div>
+        </div>
+        
+        <div class="mt-8">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white grid place-items-center">
+              <i class="fas fa-history"></i>
+            </div>
+            <h2 class="text-xl font-bold text-slate-800">Últimas Avaliações</h2>
+          </div>
+          
+          <div id="userFeed" class="feed-grid"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Footer -->
+  <footer class="text-center text-slate-500 text-sm py-8 border-t border-slate-200 mt-12">
+    <div class="flex items-center justify-center gap-4 mb-3">
+      <a href="#" class="hover:text-indigo-600 transition-colors"><i class="fab fa-github text-lg"></i></a>
+      <a href="#" class="hover:text-indigo-600 transition-colors"><i class="fab fa-twitter text-lg"></i></a>
+      <a href="#" class="hover:text-indigo-600 transition-colors"><i class="fas fa-envelope text-lg"></i></a>
+    </div>
+    <p>Feito com <i class="fas fa-heart text-red-500"></i> + Firebase. Hospedado no GitHub Pages.</p>
+    <p class="mt-1 text-xs">© 2023 WC Rank — Todos os direitos reservados</p>
+  </footer>
+  
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="#" class="nav-item active" data-page="homePage">
+      <i class="fas fa-home nav-icon"></i>
+      <span>Início</span>
+    </a>
+    <a href="#" class="nav-item" data-page="addPage">
+      <i class="fas fa-plus-circle nav-icon"></i>
+      <span>Adicionar</span>
+    </a>
+    <a href="#" class="nav-item" data-page="statsPage">
+      <i class="fas fa-chart-pie nav-icon"></i>
+      <span>Estatísticas</span>
+    </a>
+    <a href="#" class="nav-item" data-page="profilePage">
+      <i class="fas fa-user nav-icon"></i>
+      <span>Perfil</span>
+    </a>
+  </nav>
+
+  <script type="module">
+    const firebaseConfig = {
+      apiKey: "AIzaSyAOmc3h-n_RtYZjkjthzk1NQeLUPqUWwMw",
+      authDomain: "wc-rank.firebaseapp.com",
+      projectId: "wc-rank",
+      storageBucket: "wc-rank.appspot.com",
+      messagingSenderId: "895104976232",
+      appId: "1:895104976232:web:0697eb45f8c968fab8c2dd",
+      measurementId: "G-X1WPJP009P"
+    };
+
+    const allowedEmails = [
+      "rjcjanz@gmail.com",
+      "ines.trindade.medeiros@gmail.com"
+    ];
+
+    const CLOUD_NAME = "dnvcbe2ma";
+    const UPLOAD_PRESET = "wc-rank-preset";
+
+    const hasPlaceholders = Object.values(firebaseConfig).some(v => String(v || '').includes('COLOQUE_AQUI'));
+    if (hasPlaceholders) document.getElementById('configAlert').classList.remove('hidden');
+
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
+    import { 
+      getAuth, 
+      GoogleAuthProvider, 
+      signInWithPopup, 
+      signOut, 
+      onAuthStateChanged,
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword
+    } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
+    import { getFirestore, collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, getDocs, where, deleteDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // Elementos DOM
+    const authBtn = document.getElementById('authBtn');
+    const userPhoto = document.getElementById('userPhoto');
+    const submitBtn = document.getElementById('submitBtn');
+    const poopForm = document.getElementById('poopForm');
+    const ratingInput = document.getElementById('rating');
+    const starsEl = document.getElementById('stars');
+    const formMsg = document.getElementById('formMsg');
+    const feedEl = document.getElementById('feed');
+    const aCount = document.getElementById('aCount');
+    const bCount = document.getElementById('bCount');
+    const aAvg = document.getElementById('aAvg');
+    const bAvg = document.getElementById('bAvg');
+    const loginModal = document.getElementById('loginModal');
+    const registerModal = document.getElementById('registerModal');
+    const googleLoginBtn = document.getElementById('googleLoginBtn');
+    const emailLoginForm = document.getElementById('emailLoginForm');
+    const registerForm = document.getElementById('registerForm');
+    const showRegisterBtn = document.getElementById('showRegisterBtn');
+    const showLoginBtn = document.getElementById('showLoginBtn');
+    const loginMessage = document.getElementById('loginMessage');
+    const registerMessage = document.getElementById('registerMessage');
+    const closeButtons = document.querySelectorAll('.close');
+    const imageFileInput = document.getElementById('bathroomImageFile');
+    const uploadBtn = document.querySelector('.upload-btn');
+    const bathroomImageHidden = document.getElementById('bathroomImage');
+    const uploadStatus = document.getElementById('uploadStatus');
+    const uploadText = document.getElementById('uploadText');
+    const previewContainer = document.getElementById('previewContainer');
+    const imagePreview = document.getElementById('imagePreview');
+    const progressFill = document.getElementById('progressFill');
+    const profileName = document.getElementById('profileName');
+    const profileEmail = document.getElementById('profileEmail');
+    const totalReviews = document.getElementById('totalReviews');
+    const avgRating = document.getElementById('avgRating');
+    const topRating = document.getElementById('topRating');
+    const userFeed = document.getElementById('userFeed');
+    const navItems = document.querySelectorAll('.nav-item');
+    const pages = document.querySelectorAll('.page');
+    
+    // Page navigation
+    navItems.forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        const pageId = item.dataset.page;
+        
+        // Update active state
+        navItems.forEach(nav => nav.classList.remove('active'));
+        item.classList.add('active');
+        
+        // Show selected page
+        pages.forEach(page => page.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        
+        // Scroll to top
+        window.scrollTo(0, 0);
+      });
+    });
+    
+    uploadBtn.addEventListener('click', () => {
+      imageFileInput.click();
+    });
+
+    // Modal handlers
+    function openModal(modal) {
+      modal.style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal(modal) {
+      modal.style.display = 'none';
+      document.body.style.overflow = 'auto';
+      loginMessage.textContent = '';
+      registerMessage.textContent = '';
+    }
+
+    authBtn.addEventListener('click', () => {
+      if (auth.currentUser) {
+        signOut(auth);
+      } else {
+        openModal(loginModal);
+      }
+    });
+
+    closeButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        closeModal(loginModal);
+        closeModal(registerModal);
+      });
+    });
+
+    showRegisterBtn.addEventListener('click', () => {
+      closeModal(loginModal);
+      openModal(registerModal);
+    });
+
+    showLoginBtn.addEventListener('click', () => {
+      closeModal(registerModal);
+      openModal(loginModal);
+    });
+
+    // Login com Google
+    googleLoginBtn.addEventListener('click', async () => {
+      const provider = new GoogleAuthProvider();
+      try {
+        await signInWithPopup(auth, provider);
+        closeModal(loginModal);
+      } catch (err) {
+        console.error(err);
+        loginMessage.textContent = 'Erro ao entrar com Google: ' + err.message;
+      }
+    });
+
+    // Login com Email/Senha
+    emailLoginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        closeModal(loginModal);
+      } catch (err) {
+        console.error(err);
+        loginMessage.textContent = 'Erro ao entrar: ' + err.message;
+      }
+    });
+
+    // Registro com Email/Senha
+    registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('registerEmail').value;
+      const password = document.getElementById('registerPassword').value;
+      const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+      
+      if (password !== passwordConfirm) {
+        registerMessage.textContent = 'As senhas não coincidem!';
+        registerMessage.style.color = 'red';
+        return;
+      }
+      
+      try {
+        await createUserWithEmailAndPassword(auth, email, password);
+        registerMessage.textContent = 'Conta criada com sucesso!';
+        registerMessage.style.color = 'green';
+        setTimeout(() => {
+          closeModal(registerModal);
+          openModal(loginModal);
+        }, 1500);
+      } catch (err) {
+        console.error(err);
+        registerMessage.textContent = 'Erro ao criar conta: ' + err.message;
+        registerMessage.style.color = 'red';
+      }
+    });
+
+    // Fechar modal ao clicar fora
+    window.addEventListener('click', (e) => {
+      if (e.target === loginModal) closeModal(loginModal);
+      if (e.target === registerModal) closeModal(registerModal);
+    });
+
+    // Função para renderizar estrelas
+    function renderStars(rating) {
+      let stars = '';
+      for (let i = 1; i <= 5; i++) {
+        stars += i <= rating ? '★' : '☆';
+      }
+      return `<span class="star-rating">${stars}</span>`;
+    }
+
+    starsEl.addEventListener('click', (e) => {
+      if (!e.target.matches('.star')) return;
+      const val = Number(e.target.dataset.value);
+      ratingInput.value = String(val);
+      [...starsEl.children].forEach(btn => btn.setAttribute('aria-checked', Number(btn.dataset.value) <= val));
+      maybeEnableSubmit();
+    });
+
+    function maybeEnableSubmit() {
+      const ok = auth.currentUser && Number(ratingInput.value) >= 1 && document.getElementById('bathroomName').value.trim().length > 0;
+      submitBtn.disabled = !ok;
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        if (!allowedEmails.includes(user.email || '')) {
+          alert('Esta app é privada. Apenas 2 emails autorizados.');
+          await signOut(auth);
+          return;
+        }
+        authBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Sair';
+        if (user.photoURL) {
+          userPhoto.src = user.photoURL;
+          userPhoto.classList.remove('hidden');
+        }
+        
+        // Update profile info
+        profileName.textContent = user.displayName || user.email.split('@')[0];
+        profileEmail.textContent = user.email;
+        
+        // Load user reviews
+        loadUserReviews(user.uid);
+
+        if (user.email === "rjcjanz@gmail.com") {
+          document.getElementById('adminLink').classList.remove("hidden");
+        }
+      } else {
+        authBtn.textContent = 'Entrar';
+        userPhoto.classList.add('hidden');
+        document.getElementById('adminLink').classList.add("hidden");
+        
+        // Reset profile info
+        profileName.textContent = 'Convidado';
+        profileEmail.textContent = 'Faça login para ver seu perfil';
+        totalReviews.textContent = '0';
+        avgRating.textContent = '0.0';
+        topRating.textContent = '5';
+        userFeed.innerHTML = '';
+      }
+      maybeEnableSubmit();
+      if (user) refreshUsers();
+    });
+
+    poopForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const user = auth.currentUser;
+      if (!user) return;
+      const rating = Number(ratingInput.value);
+      const bathroomName = document.getElementById('bathroomName').value.trim();
+      const note = document.getElementById('note').value.trim();
+      const bathroomImage = document.getElementById('bathroomImage').value.trim();
+      const bathroomLink = document.getElementById('bathroomLink').value.trim();
+      if (rating < 1 || rating > 5 || !bathroomName) return;
+      submitBtn.disabled = true;
+      formMsg.textContent = 'A guardar…';
+      formMsg.className = 'text-sm text-center text-indigo-600 mt-2';
+      try {
+        await addDoc(collection(db, 'poops'), {
+          userId: user.uid,
+          userName: user.displayName || user.email.split('@')[0],
+          userEmail: user.email || '',
+          bathroomName,
+          rating,
+          note,
+          bathroomImage: bathroomImage || '',
+          bathroomLink: bathroomLink || '',
+          createdAt: serverTimestamp()
+        });
+        poopForm.reset();
+        ratingInput.value = '0';
+        [...starsEl.children].forEach(btn => btn.setAttribute('aria-checked', 'false'));
+        formMsg.textContent = 'Avaliação guardada com sucesso! ✅';
+        formMsg.className = 'text-sm text-center text-green-600 mt-2';
+        setTimeout(() => (formMsg.textContent = ''), 2000);
+        
+        // Resetar upload de imagem
+        previewContainer.classList.add('hidden');
+        bathroomImageHidden.value = '';
+        uploadText.textContent = 'Selecionar imagem';
+        uploadStatus.textContent = '';
+        
+        // Switch to home page after submission
+        navItems.forEach(nav => nav.classList.remove('active'));
+        document.querySelector('.nav-item[data-page="homePage"]').classList.add('active');
+        pages.forEach(page => page.classList.remove('active'));
+        document.getElementById('homePage').classList.add('active');
+      } catch (err) {
+        console.error(err);
+        formMsg.textContent = 'Erro ao guardar avaliação.';
+        formMsg.className = 'text-sm text-center text-red-600 mt-2';
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+
+    // Upload de imagem com Cloudinary
+    imageFileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      // Verificar tamanho do arquivo (máximo 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        uploadStatus.textContent = "Arquivo muito grande (máx. 5MB)";
+        uploadStatus.className = "text-xs text-red-500 mt-2";
+        return;
+      }
+      
+      // Mostrar preview da imagem
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        imagePreview.src = e.target.result;
+        previewContainer.classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+      
+      uploadText.textContent = file.name.length > 20 ? file.name.substring(0, 17) + '...' : file.name;
+      uploadStatus.textContent = "A enviar imagem...";
+      uploadStatus.className = "text-xs text-slate-500 mt-2";
+      progressFill.style.width = '0%';
+      
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', UPLOAD_PRESET);
+        formData.append('cloud_name', CLOUD_NAME);
+        
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, true);
+        
+        // Atualizar barra de progresso
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            progressFill.style.width = `${percent}%`;
+          }
+        });
+        
+        xhr.onload = () => {
+          if (xhr.status === 200) {
+            const response = JSON.parse(xhr.responseText);
+            bathroomImageHidden.value = response.secure_url;
+            uploadStatus.textContent = "Imagem enviada com sucesso!";
+            uploadStatus.className = "text-xs text-green-600 mt-2";
+          } else {
+            console.error('Erro no upload:', xhr.responseText);
+            uploadStatus.textContent = "Erro ao enviar imagem";
+            uploadStatus.className = "text-xs text-red-500 mt-2";
+          }
+        };
+        
+        xhr.onerror = () => {
+          console.error('Erro na conexão');
+          uploadStatus.textContent = "Erro na conexão";
+          uploadStatus.className = "text-xs text-red-500 mt-2";
+        };
+        
+        xhr.send(formData);
+      } catch (err) {
+        console.error(err);
+        uploadStatus.textContent = "Erro ao processar imagem";
+        uploadStatus.className = "text-xs text-red-500 mt-2";
+      }
+    });
+
+    // Feed de avaliações
+    const feedQuery = query(collection(db, 'poops'), orderBy('createdAt', 'desc'));
+    onSnapshot(feedQuery, (snap) => {
+      const items = [];
+      
+      if (snap.empty) {
+        items.push(`
+          <div class="empty-feed">
+            <i class="fas fa-inbox"></i>
+            <h3 class="text-lg font-medium mb-2">Nenhuma avaliação encontrada</h3>
+            <p class="text-slate-600">Seja o primeiro a partilhar uma avaliação!</p>
+          </div>
+        `);
+        feedEl.innerHTML = items.join('');
+        return;
+      }
+      
+      snap.forEach((docSnap) => {
+        const d = docSnap.data();
+        if (!allowedEmails.includes(d.userEmail || '')) return;
+        const dt = d.createdAt?.toDate?.() || new Date();
+        const dateStr = dt.toLocaleDateString('pt-PT', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        
+        const userInitial = d.userName ? d.userName.charAt(0).toUpperCase() : '?';
+        
+        items.push(`
+          <div class="feed-card animate-fade-in">
+            ${d.bathroomImage ? 
+              `<img src="${escapeHtml(d.bathroomImage)}" alt="Imagem da casa de banho" class="card-image">` : 
+              `<div class="card-image">
+                <i class="fas fa-toilet fa-3x opacity-30"></i>
+              </div>`
+            }
+            <div class="card-content">
+              <div class="card-header">
+                <div class="bathroom-name">
+                  <i class="fas fa-toilet text-indigo-500"></i>
+                  ${escapeHtml(d.bathroomName || 'Casa de Banho')}
+                </div>
+                <div class="rating-badge">
+                  ${renderStars(d.rating)}
+                </div>
+              </div>
+              
+              <div class="card-body">
+                ${d.note ? `<div class="note">${escapeHtml(d.note)}</div>` : ''}
+                ${d.bathroomLink ? `
+                  <a href="${escapeHtml(d.bathroomLink)}" target="_blank" class="map-link">
+                    <i class="fas fa-map-marker-alt"></i>
+                    Ver localização
+                  </a>
+                ` : ''}
+              </div>
+              
+              <div class="card-footer">
+                <div class="user-info">
+                  <div class="user-avatar">${userInitial}</div>
+                  <span>${escapeHtml(d.userName || 'Anónimo')}</span>
+                </div>
+                <div class="date">${dateStr}</div>
+              </div>
+              
+              ${auth.currentUser && auth.currentUser.uid === d.userId ? 
+                `<div class="mt-4 text-right">
+                  <button data-id="${docSnap.id}" class="remove-btn">
+                    <i class="fas fa-trash-alt"></i>
+                    Remover
+                  </button>
+                </div>` 
+              : ''}
+            </div>
+          </div>
+        `);
+      });
+      
+      feedEl.innerHTML = items.join('');
+      
+      // Adicionar evento para botões de remoção
+      feedEl.querySelectorAll('.remove-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.dataset.id;
+          if (confirm('Tem certeza que deseja remover esta avaliação?')) {
+            await deleteDoc(doc(db, 'poops', id));
+          }
+        });
+      });
+      
+      computeDuel();
+    });
+
+    // Carregar avaliações do usuário para o perfil
+    async function loadUserReviews(userId) {
+      const userReviewsQuery = query(collection(db, 'poops'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
+      const snapshot = await getDocs(userReviewsQuery);
+      
+      // Atualizar estatísticas
+      totalReviews.textContent = snapshot.size;
+      
+      if (snapshot.size > 0) {
+        let totalRating = 0;
+        let maxRating = 0;
+        
+        snapshot.forEach(doc => {
+          const rating = doc.data().rating;
+          totalRating += rating;
+          if (rating > maxRating) maxRating = rating;
+        });
+        
+        avgRating.textContent = (totalRating / snapshot.size).toFixed(1);
+        topRating.textContent = maxRating;
+      } else {
+        avgRating.textContent = '0.0';
+        topRating.textContent = '0';
+      }
+      
+      // Exibir avaliações no perfil
+      const items = [];
+      snapshot.forEach((docSnap) => {
+        const d = docSnap.data();
+        const dt = d.createdAt?.toDate?.() || new Date();
+        const dateStr = dt.toLocaleDateString('pt-PT', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        });
+        
+        items.push(`
+          <div class="feed-card">
+            <div class="card-content">
+              <div class="card-header">
+                <div class="bathroom-name">
+                  <i class="fas fa-toilet text-indigo-500"></i>
+                  ${escapeHtml(d.bathroomName || 'Casa de Banho')}
+                </div>
+                <div class="rating-badge">
+                  ${renderStars(d.rating)}
+                </div>
+              </div>
+              
+              <div class="card-body">
+                ${d.note ? `<div class="note">${escapeHtml(d.note)}</div>` : ''}
+              </div>
+              
+              <div class="card-footer">
+                <div class="date">${dateStr}</div>
+              </div>
+            </div>
+          </div>
+        `);
+      });
+      
+      userFeed.innerHTML = items.join('');
+    }
+
+    async function refreshUsers() {
+      const snap = await getDocs(collection(db, 'poops'));
+      const map = new Map();
+      snap.forEach(doc => {
+        const d = doc.data();
+        if (!allowedEmails.includes(d.userEmail || '')) return;
+        if (d.userId) map.set(d.userId, d.userName || 'Sem nome');
+      });
+      if (map.size === 2) {
+        const [uid1, uid2] = [...map.keys()];
+        computeDuel(uid1, uid2);
+      }
+    }
+
+    async function computeDuel(uid1, uid2) {
+      if (!uid1 || !uid2) { 
+        aCount.textContent = bCount.textContent = aAvg.textContent = bAvg.textContent = '—'; 
+        return; 
+      }
+      
+      const qA = query(collection(db, 'poops'), where('userId', '==', uid1));
+      const qB = query(collection(db, 'poops'), where('userId', '==', uid2));
+      const [snapA, snapB] = await Promise.all([getDocs(qA), getDocs(qB)]);
+      
+      const arrA = snapA.docs.map(d => d.data()).filter(d => allowedEmails.includes(d.userEmail || ''));
+      const arrB = snapB.docs.map(d => d.data()).filter(d => allowedEmails.includes(d.userEmail || ''));
+      
+      const totalA = arrA.length; 
+      const totalB = arrB.length;
+      
+      const avgA = totalA ? (arrA.reduce((s, x) => s + (Number(x.rating)||0), 0) / totalA) : 0;
+      const avgB = totalB ? (arrB.reduce((s, x) => s + (Number(x.rating)||0), 0) / totalB) : 0;
+      
+      aCount.textContent = String(totalA);
+      bCount.textContent = String(totalB);
+      aAvg.textContent = avgA.toFixed(1);
+      bAvg.textContent = avgB.toFixed(1);
+      
+      // Adicionar animação quando os valores mudam
+      if (totalA > 0 || totalB > 0) {
+        aCount.classList.add('animate-pulse');
+        bCount.classList.add('animate-pulse');
+        aAvg.classList.add('animate-pulse');
+        bAvg.classList.add('animate-pulse');
+        
+        setTimeout(() => {
+          aCount.classList.remove('animate-pulse');
+          bCount.classList.remove('animate-pulse');
+          aAvg.classList.remove('animate-pulse');
+          bAvg.classList.remove('animate-pulse');
+        }, 1000);
+      }
+    }
+    // Atualizar estatísticas
+   // Atualizar estatísticas com gráficos
+async function updateStats() {
+  const snapshot = await getDocs(collection(db, 'poops'));
+  const reviews = snapshot.docs.map(doc => doc.data()).filter(d => allowedEmails.includes(d.userEmail || ''));
+  
+  if (reviews.length === 0) return;
+  
+  // Destruir gráficos anteriores se existirem
+  Chart.getChart('avgRatingChart')?.destroy();
+  Chart.getChart('starDistributionChart')?.destroy();
+  Chart.getChart('popularBathroomsChart')?.destroy();
+  Chart.getChart('reviewsPerDayChart')?.destroy();
+  
+  // 1. Média de Avaliações
+  const avgRating = reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
+  document.querySelector('.stat-chart:nth-child(1) .chart-placeholder').innerHTML = `
+    <canvas id="avgRatingChart"></canvas>
+  `;
+  
+  new Chart(
+    document.getElementById('avgRatingChart'),
+    {
+      type: 'doughnut',
+      data: {
+        labels: ['Média'],
+        datasets: [{
+          data: [avgRating, 5 - avgRating],
+          backgroundColor: [
+            '#6366f1',
+            '#e2e8f0'
+          ],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        cutout: '70%',
+        plugins: {
+          legend: { display: false },
+          tooltip: { enabled: false },
+          title: {
+            display: true,
+            text: `Média: ${avgRating.toFixed(1)}`,
+            position: 'bottom',
+            font: { size: 14 }
+          }
+        },
+        animation: { animateScale: true }
+      }
+    }
+  );
+  
+  // 2. Distribuição de Estrelas
+  const starDistribution = [0, 0, 0, 0, 0];
+  reviews.forEach(review => {
+    starDistribution[review.rating - 1]++;
+  });
+  
+  document.querySelector('.stat-chart:nth-child(2) .chart-placeholder').innerHTML = `
+    <canvas id="starDistributionChart"></canvas>
+  `;
+  
+  new Chart(
+    document.getElementById('starDistributionChart'),
+    {
+      type: 'bar',
+      data: {
+        labels: ['1 ★', '2 ★', '3 ★', '4 ★', '5 ★'],
+        datasets: [{
+          data: starDistribution,
+          backgroundColor: [
+            '#ef4444',
+            '#f97316',
+            '#f59e0b',
+            '#84cc16',
+            '#10b981'
+          ],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          title: {
+            display: true,
+            text: 'Distribuição por Estrelas',
+            font: { size: 14 }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { stepSize: 1 }
+          }
+        },
+        animation: { animateScale: true }
+      }
+    }
+  );
+  
+  // 3. Casas de Banho Mais Populares
+  const bathroomCounts = {};
+  reviews.forEach(review => {
+    const name = review.bathroomName || 'Desconhecida';
+    bathroomCounts[name] = (bathroomCounts[name] || 0) + 1;
+  });
+  
+  const popularBathrooms = Object.entries(bathroomCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+  
+  document.querySelector('.stat-chart:nth-child(3) .chart-placeholder').innerHTML = `
+    <canvas id="popularBathroomsChart"></canvas>
+  `;
+  
+  new Chart(
+  document.getElementById('popularBathroomsChart'),
+  {
+    type: 'bar', // Changed from 'horizontalBar'
+    data: {
+      labels: popularBathrooms.map(([name]) => name),
+      datasets: [{
+        data: popularBathrooms.map(([_, count]) => count),
+        backgroundColor: '#6366f1',
+        borderWidth: 0
+      }]
+    },
+    options: {
+      indexAxis: 'y', // This makes it horizontal
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        title: {
+          display: true,
+          text: 'Mais Avaliadas',
+          font: { size: 14 }
+        }
+      },
+      scales: {
+        x: { beginAtZero: true, ticks: { stepSize: 1 } }
+      },
+      animation: { animateScale: true }
+    }
+  }
+);
+  
+  // 4. Avaliações por Dia
+  const dayCounts = {};
+  reviews.forEach(review => {
+    const date = review.createdAt?.toDate?.() || new Date();
+    const day = date.toLocaleDateString('pt-PT');
+    dayCounts[day] = (dayCounts[day] || 0) + 1;
+  });
+  
+  const sortedDays = Object.entries(dayCounts).sort((a, b) => 
+    new Date(a[0].split('/').reverse().join('-')) - new Date(b[0].split('/').reverse().join('-'))
+  );
+  
+  document.querySelector('.stat-chart:nth-child(4) .chart-placeholder').innerHTML = `
+    <canvas id="reviewsPerDayChart"></canvas>
+  `;
+  
+  new Chart(
+    document.getElementById('reviewsPerDayChart'),
+    {
+      type: 'line',
+      data: {
+        labels: sortedDays.map(([day]) => day),
+        datasets: [{
+          data: sortedDays.map(([_, count]) => count),
+          backgroundColor: 'rgba(99, 102, 241, 0.1)',
+          borderColor: '#6366f1',
+          borderWidth: 2,
+          tension: 0.3,
+          fill: true,
+          pointBackgroundColor: '#6366f1',
+          pointRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          title: {
+            display: true,
+            text: 'Avaliações por Dia',
+            font: { size: 14 }
+          }
+        },
+        scales: {
+          y: { beginAtZero: true }
+        },
+        animation: { animateScale: true }
+      }
+    }
+  );
+}
+    // Chamar a função quando a página de estatísticas for carregada
+    document.querySelector('.nav-item[data-page="statsPage"]').addEventListener('click', updateStats);
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>\"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;','\'':'&#039;'}[m]));
+    }
+
+    // Dark Mode Toggle
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    const htmlElement = document.documentElement;
+    
+    // Verificar preferência salva
+    const savedMode = localStorage.getItem('darkMode');
+    if (savedMode === 'dark') {
+      htmlElement.classList.add('dark');
+      darkModeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+    } else if (savedMode === 'light') {
+      htmlElement.classList.remove('dark');
+      darkModeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+    }
+    
+    // Alternar modo
+    darkModeToggle.addEventListener('click', () => {
+      htmlElement.classList.toggle('dark');
+      
+      if (htmlElement.classList.contains('dark')) {
+        darkModeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+        localStorage.setItem('darkMode', 'dark');
+      } else {
+        darkModeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+        localStorage.setItem('darkMode', 'light');
+      }
+    });
+    window.addEventListener('resize', function() {
+  if (document.getElementById('statsPage').classList.contains('active')) {
+    updateStats();
+  }
+});
+    // Habilitar submit quando o formulário for válido
+    document.getElementById('bathroomName').addEventListener('input', maybeEnableSubmit);
+  </script>
+</body>
+</html>

@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard — WC Rank</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .stat-card {
+      @apply bg-white rounded-xl shadow p-5 transition-all duration-300 hover:shadow-lg dark:bg-slate-800 dark:border-slate-700;
+    }
+    
+    .stat-value {
+      @apply text-3xl font-bold mt-2;
+    }
+    
+    .stat-label {
+      @apply text-slate-500 text-sm uppercase tracking-wider dark:text-slate-400;
+    }
+    
+    .filter-btn {
+      @apply px-3 py-1 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700;
+    }
+    
+    .filter-btn.active {
+      @apply bg-indigo-100 border-indigo-300 text-indigo-700 dark:bg-indigo-900 dark:border-indigo-600 dark:text-indigo-200;
+    }
+    
+    .record-row {
+      @apply border-b border-slate-100 hover:bg-slate-50 transition-colors dark:border-slate-700 dark:hover:bg-slate-800;
+    }
+    
+    .record-row td {
+      @apply py-3 px-4;
+    }
+    
+    .rating-badge {
+      @apply inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm font-medium;
+    }
+
+    .dark-mode-toggle {
+      @apply p-2 rounded-full hover:bg-gray-200 transition-colors dark:hover:bg-slate-700 text-slate-700 dark:text-yellow-300;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen dark:bg-slate-900">
+  <header class="sticky top-0 z-20 bg-white shadow-sm dark:bg-slate-800">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 rounded-2xl bg-indigo-600 text-white grid place-items-center shadow-md">💩</div>
+        <h1 class="text-xl sm:text-2xl font-semibold text-slate-800 dark:text-slate-200">WC Rank — Dashboard</h1>
+      </div>
+      <div class="flex items-center gap-4">
+        <button id="darkModeToggle" class="dark-mode-toggle">
+          <i id="darkIcon" class="fas fa-moon"></i>
+        </button>
+        
+        <img id="userPhoto" alt="" class="h-9 w-9 rounded-full ring-2 ring-indigo-200 dark:ring-indigo-600" />
+        <button id="logoutBtn" class="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100">
+          <i class="fas fa-sign-out-alt mr-1"></i> Sair
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+      <!-- Card: Total Registos -->
+      <div class="stat-card">
+        <div class="stat-label">Total de Registos</div>
+        <div id="totalCount" class="stat-value text-indigo-600 dark:text-indigo-400">0</div>
+        <div class="mt-2 text-slate-500 dark:text-slate-400 flex items-center">
+          <i class="fas fa-chart-line mr-2 text-green-500"></i>
+          <span id="changeRate">0% desde ontem</span>
+        </div>
+      </div>
+      
+      <!-- Card: Média de Rating -->
+      <div class="stat-card">
+        <div class="stat-label">Média de Rating</div>
+        <div id="averageRating" class="stat-value text-amber-600 dark:text-amber-500">0.00</div>
+        <div class="mt-2">
+          <div id="ratingStars" class="text-amber-500">
+            ⭐⭐⭐⭐⭐
+          </div>
+        </div>
+      </div>
+      
+      <!-- Card: Top Casa de Banho -->
+      <div class="stat-card">
+        <div class="stat-label">Top Casa de Banho</div>
+        <div id="topBathroom" class="stat-value text-emerald-600 dark:text-emerald-400 truncate">—</div>
+        <div id="topRating" class="mt-1 text-slate-600 dark:text-slate-400">⭐ 0.0</div>
+      </div>
+      
+      <!-- Card: Utilizador Mais Ativo -->
+      <div class="stat-card">
+        <div class="stat-label">Utilizador Mais Ativo</div>
+        <div id="topUser" class="stat-value text-rose-600 dark:text-rose-400 truncate">—</div>
+        <div id="userCount" class="mt-1 text-slate-600 dark:text-slate-400">0 registos</div>
+      </div>
+    </div>
+    
+    <!-- Gráficos -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div class="stat-card">
+        <h2 class="text-lg font-semibold text-slate-800 mb-4 dark:text-slate-200">Registos por Dia</h2>
+        <canvas id="dailyChart" height="250"></canvas>
+      </div>
+      
+      <div class="stat-card">
+        <h2 class="text-lg font-semibold text-slate-800 mb-4 dark:text-slate-200">Distribuição de Ratings</h2>
+        <canvas id="ratingChart" height="250"></canvas>
+      </div>
+    </div>
+    
+    <!-- Filtros e Pesquisa -->
+    <div class="stat-card">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-200">Registos</h2>
+        
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="relative">
+            <input type="text" id="searchInput" placeholder="Pesquisar..." 
+                   class="pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200">
+            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+          </div>
+          
+          <select id="userFilter" class="px-4 py-2 rounded-lg border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200">
+            <option value="all">Todos os utilizadores</option>
+          </select>
+          
+          <div class="flex gap-1">
+            <button data-days="1" class="filter-btn">Hoje</button>
+            <button data-days="7" class="filter-btn active">7 dias</button>
+            <button data-days="30" class="filter-btn">30 dias</button>
+            <button data-days="0" class="filter-btn">Sempre</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Tabela de Registos -->
+    <div class="stat-card overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+          <thead class="bg-slate-50 dark:bg-slate-800">
+            <tr>
+              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider dark:text-slate-400">Data</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider dark:text-slate-400">Utilizador</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider dark:text-slate-400">Casa de Banho</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider dark:text-slate-400">Rating</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider dark:text-slate-400">Notas</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider dark:text-slate-400">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="recordsTable" class="divide-y divide-slate-200 dark:divide-slate-700">
+            <!-- Registos serão inseridos aqui -->
+          </tbody>
+        </table>
+      </div>
+      
+      <div id="emptyState" class="hidden py-12 text-center">
+        <i class="fas fa-inbox text-4xl text-slate-300 mb-3 dark:text-slate-600"></i>
+        <p class="text-slate-500 dark:text-slate-400">Nenhum registo encontrado</p>
+      </div>
+      
+      <div class="px-4 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between dark:bg-slate-800 dark:border-slate-700">
+        <div class="text-sm text-slate-600 dark:text-slate-300">
+          Mostrando <span id="showingCount">0</span> de <span id="totalRecords">0</span> registos
+        </div>
+        <div class="flex gap-2">
+          <button id="prevPage" class="px-3 py-1 rounded-lg border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed dark:border-slate-700 dark:text-slate-200">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <button id="nextPage" class="px-3 py-1 rounded-lg border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed dark:border-slate-700 dark:text-slate-200">
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Botão de Apagar Tudo -->
+    <div class="mt-8 text-center">
+      <button id="deleteAllBtn" class="bg-red-600 hover:bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg transition-all">
+        <i class="fas fa-trash mr-2"></i> Remover TODOS os registos 🚨
+      </button>
+      <p id="statusMsg" class="text-sm text-slate-500 mt-3 dark:text-slate-400"></p>
+    </div>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import { 
+      getAuth, 
+      GoogleAuthProvider, 
+      signInWithPopup, 
+      onAuthStateChanged,
+      signOut 
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+    import { 
+      getFirestore, 
+      collection, 
+      getDocs, 
+      deleteDoc, 
+      doc,
+      query,
+      orderBy,
+      where
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAOmc3h-n_RtYZjkjthzk1NQeLUPqUWwMw",
+      authDomain: "wc-rank.firebaseapp.com",
+      projectId: "wc-rank",
+      storageBucket: "wc-rank.appspot.com",
+      messagingSenderId: "895104976232",
+      appId: "1:895104976232:web:0697eb45f8c968fab8c2dd",
+      measurementId: "G-X1WPJP009P"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const provider = new GoogleAuthProvider();
+
+    // Elementos DOM
+    const userPhoto = document.getElementById("userPhoto");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const deleteAllBtn = document.getElementById("deleteAllBtn");
+    const statusMsg = document.getElementById("statusMsg");
+    const totalCount = document.getElementById("totalCount");
+    const averageRating = document.getElementById("averageRating");
+    const ratingStars = document.getElementById("ratingStars");
+    const topBathroom = document.getElementById("topBathroom");
+    const topRating = document.getElementById("topRating");
+    const topUser = document.getElementById("topUser");
+    const userCount = document.getElementById("userCount");
+    const dailyChartCtx = document.getElementById("dailyChart").getContext('2d');
+    const ratingChartCtx = document.getElementById("ratingChart").getContext('2d');
+    const searchInput = document.getElementById("searchInput");
+    const userFilter = document.getElementById("userFilter");
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const recordsTable = document.getElementById("recordsTable");
+    const emptyState = document.getElementById("emptyState");
+    const showingCount = document.getElementById("showingCount");
+    const totalRecords = document.getElementById("totalRecords");
+    const prevPage = document.getElementById("prevPage");
+    const nextPage = document.getElementById("nextPage");
+    const darkModeToggle = document.getElementById("darkModeToggle");
+    const darkIcon = document.getElementById("darkIcon");
+
+    // Dark Mode
+    function toggleDarkMode() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      darkIcon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+      localStorage.setItem('darkMode', isDark ? 'enabled' : 'disabled');
+      updateCharts(); // Atualizar gráficos para o novo tema
+    }
+
+    // Verificar preferência de dark mode
+    if (localStorage.getItem('darkMode') === 'enabled') {
+      document.documentElement.classList.add('dark');
+      darkIcon.className = 'fas fa-sun';
+    }
+
+    darkModeToggle.addEventListener('click', toggleDarkMode);
+
+    // Variáveis globais
+    let allRecords = [];
+    let filteredRecords = [];
+    let currentPage = 1;
+    const recordsPerPage = 10;
+    let dailyChart, ratingChart;
+    let users = [];
+
+    // Inicializar gráficos
+    function initCharts() {
+      // Destruir gráficos existentes
+      if (dailyChart) dailyChart.destroy();
+      if (ratingChart) ratingChart.destroy();
+      
+      const isDark = document.documentElement.classList.contains('dark');
+      const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+      const textColor = isDark ? '#e2e8f0' : '#374151';
+      
+      // Gráfico de registos diários
+      dailyChart = new Chart(dailyChartCtx, {
+        type: 'bar',
+        data: {
+          labels: [],
+          datasets: [{
+            label: 'Registos por Dia',
+            data: [],
+            backgroundColor: 'rgba(79, 70, 229, 0.7)',
+            borderColor: 'rgba(79, 70, 229, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                precision: 0,
+                color: textColor
+              },
+              grid: {
+                color: gridColor
+              }
+            },
+            x: {
+              ticks: {
+                color: textColor
+              },
+              grid: {
+                color: gridColor
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              labels: {
+                color: textColor
+              }
+            }
+          }
+        }
+      });
+      
+      // Gráfico de distribuição de ratings
+      ratingChart = new Chart(ratingChartCtx, {
+        type: 'pie',
+        data: {
+          labels: ['⭐ 1', '⭐ 2', '⭐ 3', '⭐ 4', '⭐ 5'],
+          datasets: [{
+            label: 'Distribuição',
+            data: [0, 0, 0, 0, 0],
+            backgroundColor: [
+              'rgba(239, 68, 68, 0.7)',
+              'rgba(249, 115, 22, 0.7)',
+              'rgba(234, 179, 8, 0.7)',
+              'rgba(101, 163, 13, 0.7)',
+              'rgba(16, 185, 129, 0.7)'
+            ],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: textColor
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Formatar data
+    function formatDate(date) {
+      return new Date(date).toLocaleDateString('pt-PT', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    // Carregar registos
+    async function loadRecords() {
+      statusMsg.textContent = "A carregar registos...";
+      
+      try {
+        const q = query(collection(db, "poops"), orderBy("createdAt", "desc"));
+        const querySnapshot = await getDocs(q);
+        
+        allRecords = [];
+        users = [];
+        const userMap = new Map();
+        
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          const record = {
+            id: doc.id,
+            ...data,
+            createdAt: data.createdAt?.toDate?.() || new Date()
+          };
+          
+          allRecords.push(record);
+          
+          // Mapear usuários
+          if (!userMap.has(data.userId)) {
+            userMap.set(data.userId, {
+              id: data.userId,
+              name: data.userName || data.userEmail.split('@')[0],
+              email: data.userEmail,
+              count: 0,
+              totalRating: 0
+            });
+            users.push(userMap.get(data.userId));
+          }
+          
+          const user = userMap.get(data.userId);
+          user.count++;
+          user.totalRating += data.rating;
+        });
+        
+        // Atualizar filtro de usuários
+        updateUserFilter();
+        
+        // Aplicar filtros
+        applyFilters();
+        
+        statusMsg.textContent = `✅ ${allRecords.length} registos carregados`;
+      } catch (error) {
+        console.error("Erro ao carregar registos:", error);
+        statusMsg.textContent = "❌ Erro ao carregar registos";
+      }
+    }
+
+    // Atualizar filtro de usuários
+    function updateUserFilter() {
+      userFilter.innerHTML = '<option value="all">Todos os utilizadores</option>';
+      
+      users.forEach(user => {
+        const option = document.createElement('option');
+        option.value = user.id;
+        option.textContent = `${user.name} (${user.count})`;
+        userFilter.appendChild(option);
+      });
+    }
+
+    // Aplicar filtros
+    function applyFilters() {
+      const searchTerm = searchInput.value.toLowerCase();
+      const userId = userFilter.value;
+      const days = parseInt(document.querySelector('.filter-btn.active')?.dataset.days || 7);
+      
+      const now = new Date();
+      const cutoffDate = days > 0 ? 
+        new Date(now.getFullYear(), now.getMonth(), now.getDate() - days) : 
+        new Date(0);
+      
+      filteredRecords = allRecords.filter(record => {
+        // Filtro por texto
+        const matchesSearch = 
+          record.bathroomName?.toLowerCase().includes(searchTerm) ||
+          record.note?.toLowerCase().includes(searchTerm);
+        
+        // Filtro por usuário
+        const matchesUser = userId === 'all' || record.userId === userId;
+        
+        // Filtro por data
+        const matchesDate = record.createdAt >= cutoffDate;
+        
+        return matchesSearch && matchesUser && matchesDate;
+      });
+      
+      // Atualizar estatísticas
+      updateStatistics();
+      
+      // Atualizar tabela
+      currentPage = 1;
+      renderTable();
+    }
+
+    // Atualizar estatísticas
+    function updateStatistics() {
+      // Estatísticas básicas
+      totalCount.textContent = filteredRecords.length;
+      totalRecords.textContent = filteredRecords.length;
+      
+      // Média de ratings
+      if (filteredRecords.length > 0) {
+        const totalRating = filteredRecords.reduce((sum, record) => sum + record.rating, 0);
+        const avgRating = totalRating / filteredRecords.length;
+        averageRating.textContent = avgRating.toFixed(2);
+        
+        // Atualizar estrelas
+        const fullStars = Math.floor(avgRating);
+        const hasHalfStar = avgRating % 1 >= 0.5;
+        ratingStars.innerHTML = 
+          '★'.repeat(fullStars) + 
+          (hasHalfStar ? '½' : '') + 
+          '☆'.repeat(5 - fullStars - (hasHalfStar ? 1 : 0));
+      } else {
+        averageRating.textContent = "0.00";
+        ratingStars.innerHTML = "☆☆☆☆☆";
+      }
+      
+      // Top casa de banho
+      const bathroomRatings = {};
+      filteredRecords.forEach(record => {
+        if (!bathroomRatings[record.bathroomName]) {
+          bathroomRatings[record.bathroomName] = {
+            total: 0,
+            count: 0
+          };
+        }
+        bathroomRatings[record.bathroomName].total += record.rating;
+        bathroomRatings[record.bathroomName].count++;
+      });
+      
+      let topBathroomName = "—";
+      let topAvgRating = 0;
+      
+      for (const [name, data] of Object.entries(bathroomRatings)) {
+        const avg = data.total / data.count;
+        if (avg > topAvgRating) {
+          topBathroomName = name;
+          topAvgRating = avg;
+        }
+      }
+      
+      topBathroom.textContent = topBathroomName;
+      topRating.textContent = `⭐ ${topAvgRating.toFixed(1)}`;
+      
+      // Top usuário
+      const userStats = {};
+      filteredRecords.forEach(record => {
+        if (!userStats[record.userId]) {
+          userStats[record.userId] = {
+            name: record.userName || record.userEmail.split('@')[0],
+            count: 0
+          };
+        }
+        userStats[record.userId].count++;
+      });
+      
+      let topUserName = "—";
+      let topUserCount = 0;
+      
+      for (const [userId, data] of Object.entries(userStats)) {
+        if (data.count > topUserCount) {
+          topUserName = data.name;
+          topUserCount = data.count;
+        }
+      }
+      
+      topUser.textContent = topUserName;
+      userCount.textContent = `${topUserCount} registos`;
+      
+      // Atualizar gráficos
+      updateCharts();
+    }
+
+    // Atualizar gráficos
+    function updateCharts() {
+      // Gráfico diário
+      const dailyData = {};
+      const now = new Date();
+      const days = 7;
+      
+      // Inicializar os últimos 7 dias
+      for (let i = days - 1; i >= 0; i--) {
+        const date = new Date(now);
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' });
+        dailyData[dateStr] = 0;
+      }
+      
+      // Contar registos por dia
+      filteredRecords.forEach(record => {
+        const dateStr = record.createdAt.toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' });
+        if (dailyData[dateStr] !== undefined) {
+          dailyData[dateStr]++;
+        }
+      });
+      
+      dailyChart.data.labels = Object.keys(dailyData);
+      dailyChart.data.datasets[0].data = Object.values(dailyData);
+      dailyChart.update();
+      
+      // Gráfico de ratings
+      const ratingCounts = [0, 0, 0, 0, 0];
+      
+      filteredRecords.forEach(record => {
+        if (record.rating >= 1 && record.rating <= 5) {
+          ratingCounts[record.rating - 1]++;
+        }
+      });
+      
+      ratingChart.data.datasets[0].data = ratingCounts;
+      ratingChart.update();
+    }
+
+    // Renderizar tabela
+    function renderTable() {
+      const startIndex = (currentPage - 1) * recordsPerPage;
+      const endIndex = startIndex + recordsPerPage;
+      const pageRecords = filteredRecords.slice(startIndex, endIndex);
+      
+      showingCount.textContent = pageRecords.length;
+      
+      // Habilitar/desabilitar botões de paginação
+      prevPage.disabled = currentPage === 1;
+      nextPage.disabled = endIndex >= filteredRecords.length;
+      
+      if (pageRecords.length === 0) {
+        recordsTable.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+      
+      emptyState.classList.add('hidden');
+      
+      let tableHTML = '';
+      
+      pageRecords.forEach(record => {
+        const ratingColor = 
+          record.rating <= 2 ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
+          record.rating <= 3 ? 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200' :
+          record.rating <= 4 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
+          'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+        
+        tableHTML += `
+          <tr class="record-row">
+            <td class="dark:text-slate-300">${formatDate(record.createdAt)}</td>
+            <td class="dark:text-slate-300">${record.userName || record.userEmail.split('@')[0]}</td>
+            <td class="dark:text-slate-300">${record.bathroomName}</td>
+            <td>
+              <span class="rating-badge ${ratingColor}">
+                ${'⭐'.repeat(record.rating)}
+              </span>
+            </td>
+            <td class="dark:text-slate-300">${record.note || '—'}</td>
+            <td>
+              <button data-id="${record.id}" class="text-red-600 hover:text-red-800 delete-btn dark:text-red-400 dark:hover:text-red-300">
+                <i class="fas fa-trash-alt mr-1"></i> Remover
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+      
+      recordsTable.innerHTML = tableHTML;
+      
+      // Adicionar eventos de clique para os botões de remoção
+      document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.dataset.id;
+          if (confirm('Tem certeza que deseja remover este registo?')) {
+            try {
+              await deleteDoc(doc(db, "poops", id));
+              statusMsg.textContent = "✅ Registo removido com sucesso";
+              await loadRecords();
+            } catch (error) {
+              console.error("Erro ao remover registo:", error);
+              statusMsg.textContent = "❌ Erro ao remover registo";
+            }
+          }
+        });
+      });
+    }
+
+    // Event Listeners
+    logoutBtn.addEventListener('click', () => {
+      signOut(auth);
+    });
+
+    deleteAllBtn.addEventListener('click', async () => {
+      if (!confirm("Tem a certeza que quer apagar TODOS os registos? Esta ação não pode ser desfeita!")) return;
+      
+      statusMsg.textContent = "A apagar registos...";
+      
+      try {
+        const batch = [];
+        for (const record of allRecords) {
+          batch.push(deleteDoc(doc(db, "poops", record.id)));
+        }
+        
+        await Promise.all(batch);
+        statusMsg.textContent = "✅ Todos os registos foram removidos";
+        await loadRecords();
+      } catch (error) {
+        console.error("Erro ao apagar registos:", error);
+        statusMsg.textContent = "❌ Erro ao apagar registos";
+      }
+    });
+
+    searchInput.addEventListener('input', applyFilters);
+    userFilter.addEventListener('change', applyFilters);
+    
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        applyFilters();
+      });
+    });
+    
+    prevPage.addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderTable();
+      }
+    });
+    
+    nextPage.addEventListener('click', () => {
+      const totalPages = Math.ceil(filteredRecords.length / recordsPerPage);
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderTable();
+      }
+    });
+
+    // Inicialização
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        signInWithPopup(auth, provider);
+        return;
+      }
+      
+      if (user.email === "rjcjanz@gmail.com") {
+        userPhoto.src = user.photoURL || "https://ui-avatars.com/api/?name=" + encodeURIComponent(user.displayName || user.email);
+        initCharts();
+        loadRecords();
+      } else {
+        document.body.innerHTML = `
+          <div class="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-8 max-w-md text-center">
+              <div class="text-5xl mb-4 text-red-500">🚫</div>
+              <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-200 mb-2">Acesso Restrito</h1>
+              <p class="text-slate-600 dark:text-slate-400 mb-6">Apenas o administrador pode aceder a esta página.</p>
+              <button onclick="location.href='index.html'" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-lg shadow">
+                Voltar à aplicação
+              </button>
+            </div>
+          </div>
+        `;
+      }
+    });
+  </script>
+</body>
+</html>
